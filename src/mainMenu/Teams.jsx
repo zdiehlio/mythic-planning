@@ -3,12 +3,16 @@ import { Link, navigate } from '@reach/router'
 
 import { addTeam, getAllTeams, getUser } from '../db/firebase'
 
+import UserDetails from './components/UserDetails'
+import QuestDetails from './components/QuestDetails'
+
 import './Teams.css'
 
 const Teams = ({ currentUser }) => {
 	const [teamsState, setTeamsState] = useState([])
 	const [selectedTeamState, setSelectedTeamState] = useState('')
-	const [userDetailsState, setUserDetailsState] = useState()
+  const [userDetailsState, setUserDetailsState] = useState()
+  const [questDetailsState, setQuestDetailsState] = useState({ activeQuests: 0})
 	const [newTeamNameState, setNewTeamNameState] = useState('')
 	const [newTeamMemberState, setNewTeamMemberState] = useState('')
 	const [allTeamMembersState, setAllTeamMembersState] = useState([])
@@ -16,10 +20,8 @@ const Teams = ({ currentUser }) => {
 	useEffect(() => {
 		const fetchTeams = async () => {
 			const user = await getUser(currentUser.uid)
-			console.log(user)
 			const teams = await getAllTeams(user)
 			setTeamsState(teams)
-			console.log('teams', teams)
 		}
 		fetchTeams()
 	}, [currentUser.email])
@@ -41,28 +43,24 @@ const Teams = ({ currentUser }) => {
 	}
 
 	const handleSelectTeam = event => {
-		const { id } = event.target
-		const { uid } = currentUser
-		setSelectedTeamState(event.target.id)
-		const selectedTeam = teamsState.find(team => team.name === id)
-		const userDetails = selectedTeam.members[uid]
-		setUserDetailsState(userDetails)
-	}
+    const { id } = event.target
+    const selectedTeam = teamsState.find(team => team.name === id)
+    const { activeQuests } = selectedTeam
+    setSelectedTeamState(selectedTeam)
+    setUserDetailsState(selectedTeam.members[currentUser.uid])
+    setQuestDetailsState({ activeQuests: Object.values(activeQuests).length})
+  }
 
 	return (
 		<div className='teams__landing'>
 			<div className='teams__details'>
-				<h1>{selectedTeamState}</h1>
-				<div>
-					{userDetailsState && (
-						<ul>
-							<li>Name: {userDetailsState.userName}</li>
-							<li>Experience: {userDetailsState.experience}</li>
-							<li>Currency: {userDetailsState.currency}</li>
-							<li>Level: {userDetailsState.level}</li>
-						</ul>
-					)}
-				</div>
+      {selectedTeamState ?
+        <>
+          <h1 className='teams__header'>{selectedTeamState.name}</h1>
+          <UserDetails user={selectedTeamState.members[currentUser.uid]} />
+          <QuestDetails team={selectedTeamState} />
+        </>
+      : null}
 			</div>
 			<div className='teams__list'>
 				<ul>
@@ -73,7 +71,7 @@ const Teams = ({ currentUser }) => {
 									id={team.name}
 									onClick={handleSelectTeam}
 									className={`app__list__item ${team.name ===
-										selectedTeamState && 'selected'}`}
+										selectedTeamState.name && 'selected'}`}
 								>
 									{team.name}
 								</li>

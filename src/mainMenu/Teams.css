@@ -19,3 +19,8 @@
 .selected {
 	border-color: red;
 }
+
+.teams__header {
+  text-align: center;
+  width: 100%;
+}
